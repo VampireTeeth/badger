@@ -1,10 +1,36 @@
 (ns sandbox.core
-  (:require [yada.yada :as yada])
+  (:require [yada.yada :as yada]
+            [clojure.data.json :as json])
   (:gen-class))
 
+;; Cookies definitions
+(def my-cookie
+  {:session
+   {:name "session"
+    :max-age 3600
+    :domain "vampireteeth.com"
+    :path "/"
+    :secure true
+    :http-only true}})
+
+;; Response handler functions
+(defn- custom-cookie
+  [ctx]
+  ;;(println ctx)
+  (yada/set-cookie
+   ctx :session
+   "12345"))
+
 (defn- hello-to
-  [name]
-  {:message (str "Hello," name)})
+  [ctx]
+  (let [name (-> ctx :parameters :path :name)]
+    {:message (str "Hello," name)}))
+
+(defn- hello
+  [ctx]
+  (update-in ctx [:response :body]
+             (fn [_] (json/json-str {:message "Hello"}))
+
 
 ;; Definitions of resource
 (def default-404
@@ -15,20 +41,28 @@
 
 (def route-no-match-resource
   {:methods
-   {:* default-404}
+   {:* nil}
    :properties {:exists? false}
    :responses
    {404 default-404}})
 
+(def custom-cookie-resource
+  {:cookies
+   my-cookie
+   :methods
+   {:get
+    {:produces {:media-type "application/json" :charset "UTF-8"}
+     :response (comp hello custom-cookie)}}})
 
 (def hello-to-resource
   (yada/resource
    {:methods
     {:get
      {:produces
-      {:media-type "application/json" :charset "utf-8"}
-      :response (fn [ctx]
-                  (-> ctx :parameters :path :name hello-to))}}}))
+      [{:media-type "application/json" :charset "UTF-8"}
+       {:media-type "application/json;charset=utf-8"}]
+      :response hello-to}}}))
+
 ;; Define a new variable web-server to hold the web-server
 ;; created via yada/listener
 (when (not (resolve 'web-server))
@@ -43,6 +77,7 @@
      [["hello/" :name] hello-to-resource]
      ["test" (yada/resource {:produces "text/plain"
                              :response "This is a test!"})]
+     ["my-cookie" (yada/resource custom-cookie-resource)]
      [true (yada/resource route-no-match-resource)]]]
 
    {:port 3000}))
