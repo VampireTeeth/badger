@@ -1,7 +1,11 @@
 (ns nightshade.core
-  (:require [manifold.deferred :as d])
-  (:require [aleph.http :as http])
-  (:require [byte-streams :as bs])
+  (:require [manifold.deferred :as d]
+            [aleph.http :as http]
+            [bidi.bidi :as bidi]
+            [ring.util.response :as res]
+            [ring.middleware.json :refer [wrap-json-response]]
+            [bidi.ring :refer [make-handler]]
+            [byte-streams :as bs])
   (:gen-class))
 
 
@@ -16,12 +20,8 @@
 (def errd (d/deferred))
 
 (-> errd
-    (d/chain dec #(/ 1 %))
+    (d/chain dec #(/ 1 %) println)
     (d/catch Exception #(println "Whoops, that did not work!" %)))
-
-
-(when (not (resolve 'web-server))
-        (def web-server))
 
 (defn- my-handler
   [req]
@@ -29,11 +29,38 @@
    :headers {"content-type" "text/plain"}
    :body "hello!"})
 
+
+;; Bidi playing
+(defn- list-users
+  [req]
+  (res/response {:message "list-users"}))
+
+(defn- account-by-id
+  [req]
+  (res/response {:message "account-by-id"}))
+
+(defn- list-accounts
+  [req]
+  (res/response {:message "list-accounts"}))
+
+(def my-routes
+  ["/" {"users" list-users
+        "accounts"
+        {["/" :id] account-by-id
+         "" list-accounts}}])
+
+
+;; web-server initialization
+(when (not (resolve 'web-server))
+        (def web-server))
+
 (defn- start-server
   [_]
   (http/start-server
-   my-handler
+   ;;my-handler
+   (-> my-routes make-handler wrap-json-response)
    {:port 3000}))
+
 
 (defn go
   []
@@ -42,11 +69,20 @@
   (alter-var-root #'web-server start-server))
 
 
-
 ;; Client code
-(defn hello-web-client
+(def server-base-url "http://localhost:3000")
+
+(defn get-users
   []
-  (-> (http/get "http://localhost:3000")
+  (-> (http/get (str server-base-url "/users"))
+      (d/chain :body
+               bs/to-string
+               println)))
+
+
+(defn get-accounts
+  []
+  (-> (http/get (str server-base-url "/accounts"))
       (d/chain :body
                bs/to-string
                println)))
