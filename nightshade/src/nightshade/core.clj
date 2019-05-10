@@ -2,9 +2,9 @@
   (:require [manifold.deferred :as d]
             [aleph.http :as http]
             [bidi.bidi :as bidi]
+            [bidi.ring :refer [make-handler]]
             [ring.util.response :as res]
             [ring.middleware.json :refer [wrap-json-response]]
-            [bidi.ring :refer [make-handler]]
             [byte-streams :as bs])
   (:gen-class))
 
@@ -37,7 +37,8 @@
 
 (defn- account-by-id
   [req]
-  (res/response {:message "account-by-id"}))
+  (println req)
+  (res/response {:message (str "account-by-id for " (-> req :params :id))}))
 
 (defn- list-accounts
   [req]
@@ -83,6 +84,14 @@
 (defn get-accounts
   []
   (-> (http/get (str server-base-url "/accounts"))
+      (d/chain :body
+               bs/to-string
+               println)))
+
+
+(defn get-account-by-id
+  [id]
+  (-> (http/get (str server-base-url "/accounts/" id))
       (d/chain :body
                bs/to-string
                println)))
