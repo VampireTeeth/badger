@@ -29,10 +29,29 @@
   (fn [ctx]
     "I dont understand what you say"))
 
+
+(defresource timehop
+  :available-media-types ["text/plain"]
+  ;; Time hops every 60 seconds
+  :last-modified (-> (System/currentTimeMillis) (/ 60000) long (* 60000))
+  :handle-ok
+  (fn [_]
+    (format "It is now %s" (java.util.Date.))))
+
+(defresource changetag
+  :available-media-types ["text/plain"]
+  :etag
+  (let [i (-> (System/currentTimeMillis) (/ 60000) (mod 10) int)]
+    (-> "abcdefghijklmnopqrstuvwxyz" (.substring i (+ i 10)))))
+
 (def blade-routes
   ["/" {"hello"
         {"" hello-world
-         ["/" :name] hello-to}}])
+         ["/" :name] hello-to}
+        "timehop"
+        timehop
+        "changetag"
+        changetag}])
 
 (defn go
   []
