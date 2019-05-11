@@ -5,7 +5,8 @@
             [bidi.ring :refer [make-handler]]
             [ring.util.response :as res]
             [ring.middleware.json :refer [wrap-json-response]]
-            [byte-streams :as bs])
+            [byte-streams :as bs]
+            [nightshade.dev :as dev])
   (:gen-class))
 
 
@@ -14,7 +15,6 @@
 (d/chain d
          #(future (inc %))
          #(println "The future retutned" %))
-
 
 
 (def errd (d/deferred))
@@ -51,24 +51,9 @@
          "" list-accounts}}])
 
 
-;; web-server initialization
-(when (not (resolve 'web-server))
-        (def web-server))
-
-(defn- start-server
-  [_]
-  (http/start-server
-   ;;my-handler
-   (-> my-routes make-handler wrap-json-response)
-   {:port 3000}))
-
-
 (defn go
   []
-  (when (bound? #'web-server)
-    (.close web-server))
-  (alter-var-root #'web-server start-server))
-
+  (dev/go (-> my-routes make-handler wrap-json-response)))
 
 ;; Client code
 (def server-base-url "http://localhost:3000")
