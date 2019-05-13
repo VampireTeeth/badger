@@ -44,14 +44,35 @@
   (let [i (-> (System/currentTimeMillis) (/ 60000) (mod 10) int)]
     (-> "abcdefghijklmnopqrstuvwxyz" (.substring i (+ i 10)))))
 
+(def users-count (ref 0))
+
+(defresource user-resource
+  :available-media-types ["application/json" "application/xml"]
+  :allowed-methods [:get :post]
+  :handle-ok
+  (fn [ctx]
+    (println "handle-ok")
+    {:status 200 :count @users-count})
+
+  :post!
+  (fn [ctx]
+    (dosync
+     (println "post!")
+     (alter users-count inc)
+     {::count @users-count}))
+
+  :post-redirect?
+  (fn [ctx] {:location "/user"}))
+
 (def blade-routes
-  ["/" {"hello"
-        {"" hello-world
-         ["/" :name] hello-to}
-        "timehop"
-        timehop
-        "changetag"
-        changetag}])
+  ["/" {"hello" {"" hello-world
+                 ["/" :name] hello-to}
+
+        "timehop" timehop
+
+        "changetag" changetag
+
+        "user" user-resource}])
 
 (defn go
   []
