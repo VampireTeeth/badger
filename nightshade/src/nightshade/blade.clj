@@ -5,6 +5,7 @@
             [bidi.ring :refer [make-handler]]
             [liberator.core :refer [defresource]]
             [liberator.dev :refer [wrap-trace]]
+            [liberator.representation :refer [ring-response]]
             [cemerick.url :as url]
             [nightshade.dev :as dev]
             [byte-streams :as bs]))
@@ -64,6 +65,15 @@
   :post-redirect?
   (fn [ctx] {:location "/user"}))
 
+(defresource custom-response
+  :available-media-types ["application/json"]
+  :allowed-methods [:get]
+  :handle-ok
+  (fn [ctx]
+    (ring-response {:some "Json"}
+                   {:status 202
+                    :headers {"X-Foo-Header" "This is me"}})))
+
 (def blade-routes
   ["/" {"hello" {"" hello-world
                  ["/" :name] hello-to}
@@ -72,7 +82,9 @@
 
         "changetag" changetag
 
-        "user" user-resource}])
+        "user" user-resource
+
+        "custom" custom-response}])
 
 (defn go
   []
