@@ -5,7 +5,7 @@
             [bidi.ring :refer [make-handler]]
             [liberator.core :refer [defresource]]
             [liberator.dev :refer [wrap-trace]]
-            [liberator.representation :refer [ring-response]]
+            [liberator.representation :refer [ring-response as-response]]
             [cemerick.url :as url]
             [nightshade.dev :as dev]
             [byte-streams :as bs]))
@@ -68,6 +68,7 @@
 (defresource custom-response
   :available-media-types ["application/json"]
   :allowed-methods [:get]
+
   :handle-ok
   (fn [ctx]
     (ring-response {:some "Json"}
@@ -86,10 +87,21 @@
 
         "custom" custom-response}])
 
+
+;; Middleware for wrapping the response into
+;; a manifold.deferred
+(defn wrap-deferred
+  [handler]
+  (fn [req]
+    (d/future (handler req))))
+
 (defn go
   []
   (dev/go
-    (-> blade-routes make-handler (wrap-trace :header :ui))))
+    (-> blade-routes
+        make-handler
+        (wrap-trace :header :ui)
+        wrap-deferred)))
 
 
 ;; Client code
