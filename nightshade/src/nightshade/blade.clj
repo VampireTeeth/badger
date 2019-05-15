@@ -75,6 +75,13 @@
                    {:status 202
                     :headers {"X-Foo-Header" "This is me"}})))
 
+(defresource not-found
+  :available-media-types ["application/json"]
+  :exists? nil
+  :handle-not-found
+  (fn [ctx]
+    {:message "Resource not found"}))
+
 (def blade-routes
   ["/" {"hello" {"" hello-world
                  ["/" :name] hello-to}
@@ -85,7 +92,9 @@
 
         "user" user-resource
 
-        "custom" custom-response}])
+        "custom" custom-response
+
+        true not-found}])
 
 
 ;; Middleware for wrapping the response into
