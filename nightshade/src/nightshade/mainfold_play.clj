@@ -34,7 +34,6 @@
              (prn 'message! m)
              m)))
 
-
 (defn timeout-and-drained-take
   []
   (let [s (s/stream)]
@@ -43,3 +42,20 @@
              (fn [s]
                (prn 'closed! s)
                (take-from-stream s 1000)))))
+
+(defn derived-stream
+  []
+  (let [s (s/stream)
+        a (s/map inc s)
+        b (s/map dec s)]
+    (d/chain (s/put! s 0) #(prn :taken? %))
+    (d/chain (s/take! a) #(prn :inc %))
+    (d/chain (s/take! b) #(prn :dec %))))
+
+(defn connecting-streams
+  []
+  (let [a (s/stream)
+        b (s/stream)]
+    (s/connect a b)
+    (d/chain (s/put! a 0) #(prn :taken? %))
+    (d/chain (s/take! b) #(prn :received %))))
