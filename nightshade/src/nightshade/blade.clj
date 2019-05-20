@@ -9,7 +9,14 @@
             [liberator.representation :refer [ring-response as-response]]
             [cemerick.url :as url]
             [nightshade.dev :as dev]
-            [byte-streams :as bs]))
+            [byte-streams :as bs])
+  (:import [manifold.stream.core IEventSource]))
+
+(extend-protocol liberator.representation/Representation
+  IEventSource
+  (as-response [r ctx]
+    (assoc ctx :body r)))
+
 
 (defresource hello-world
   :available-media-types ["text/plain"]
@@ -98,11 +105,6 @@
       (->>
        (s/periodically 100 #(str (swap! sent inc) "\n"))
        (s/transform (take cnt))))))
-
-(extend-protocol liberator.representation/Representation
-  manifold.stream.SourceProxy
-  (as-response [r ctx]
-    (assoc ctx :body r)))
 
 (def blade-routes
   ["/" {"hello" {"" hello-world
