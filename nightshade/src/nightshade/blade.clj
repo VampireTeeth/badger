@@ -1,5 +1,6 @@
 (ns nightshade.blade
   (:require [manifold.deferred :as d]
+            [manifold.stream :as s]
             [aleph.http :as http]
             [bidi.bidi :as bidi]
             [bidi.ring :refer [make-handler]]
@@ -82,6 +83,27 @@
   (fn [ctx]
     {:message "Resource not found"}))
 
+(defresource streamed-number
+  :available-media-types ["text/plain"]
+  :allowed-methods [:get]
+
+  :exists?
+  (fn [ctx]
+    {::cnt (Integer/parseInt (get-in ctx [:request :route-params :cnt]))})
+
+  :handle-ok
+  (fn [ctx]
+    (let [sent (atom 0)
+          cnt (::cnt ctx)]
+      (->>
+       (s/periodically 100 #(str (swap! sent inc) "\n"))
+       (s/transform (take cnt))))))
+
+(extend-protocol liberator.representation/Representation
+  manifold.stream.SourceProxy
+  (as-response [r ctx]
+    (assoc ctx :body r)))
+
 (def blade-routes
   ["/" {"hello" {"" hello-world
                  ["/" :name] hello-to}
@@ -93,6 +115,8 @@
         "user" user-resource
 
         "custom" custom-response
+
+        ["numbers/" :cnt] streamed-number
 
         true not-found}])
 
