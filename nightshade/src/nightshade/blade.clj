@@ -1,16 +1,17 @@
 (ns nightshade.blade
-  (:require [manifold.deferred :as d]
-            [manifold.stream :as s]
-            [aleph.http :as http]
-            [bidi.bidi :as bidi]
+  (:require [aleph.http :as http]
             [bidi.ring :refer [make-handler]]
+            [byte-streams :as bs]
+            [cemerick.url :as url]
             [liberator.core :refer [defresource]]
             [liberator.dev :refer [wrap-trace]]
-            [liberator.representation :refer [ring-response as-response]]
-            [cemerick.url :as url]
-            [nightshade.dev :as dev]
-            [byte-streams :as bs])
-  (:import [manifold.stream.core IEventSource]))
+            [liberator.representation :refer [as-response ring-response]]
+            [manifold.deferred :as d]
+            [manifold.stream :as s])
+  (:import java.util.Date
+           manifold.stream.core.IEventSource))
+
+(declare timehop)
 
 (extend-protocol liberator.representation/Representation
   IEventSource
@@ -45,7 +46,7 @@
   :last-modified (-> (System/currentTimeMillis) (/ 60000) long (* 60000))
   :handle-ok
   (fn [_]
-    (format "It is now %s" (java.util.Date.))))
+    (format "It is now %s" (Date.))))
 
 (defresource changetag
   :available-media-types ["text/plain"]
@@ -130,14 +131,12 @@
   (fn [req]
     (d/future (handler req))))
 
-(defn go
+(defn blade-handler
   []
-  (dev/go
-    (-> blade-routes
-        make-handler
-        (wrap-trace :header :ui)
-        wrap-deferred)))
-
+  (-> blade-routes
+      make-handler
+      (wrap-trace :header :ui)
+      wrap-deferred))
 
 ;; Client code
 (def base-url "http://localhost:3000")

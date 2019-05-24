@@ -1,5 +1,6 @@
 (ns nightshade.dev
-  (:require [aleph.http :as http]))
+  (:require [aleph.http :as http]
+            [nightshade.blade :as blade]))
 
 
 ;; web-server initialization
@@ -19,3 +20,7 @@
   (when (bound? #'web-server)
     (.close web-server))
   (alter-var-root #'web-server (partial start-server handler)))
+
+(defn blade-go
+  []
+  (go (blade/blade-handler)))
