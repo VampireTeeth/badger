@@ -1,7 +1,7 @@
 (ns core-async-csp.core
   (:gen-class)
   (:require [clojure.core.async :as async
-             :refer [>!! >! <!! <! alts!! alts!! alt! alt!! chan close! go thread]]))
+             :refer [>!! >! <!! <! alts!! alts!! alt! alt!! chan close! go thread timeout]]))
 
 (defn- current-thread-name
   []
@@ -75,22 +75,25 @@
         c3 (chan)
         c4 (chan)]
 
+    ;;(put-with-random-sleep c1 "hello" 10)
+    ;;(put-with-random-sleep c2 "world" 8)
+    (go (<! (timeout 3000)) (>! c1 "hello"))
+    (go (<! (timeout 6000)) (>! c2 "world"))
+
+    (go (<! (timeout 4000)) (println (current-thread-name) "Got" (<! c3)))
+    (go (<! (timeout 4500)) (println (current-thread-name) "Got" (<! c4)))
+
     (thread
-      (let [[v ch]
-            (alt!!
-              ;; Wait for the first take operation on c1 and c2
-              [c1 c2]
-              ([v ch] (println (current-thread-name) "Read" v "from channel" ch))
+      (alt!!
+        ;; Wait for the first take operation on c1 and c2
+        [c1 c2]
+        ([v ch]
+         (println (current-thread-name) "Got" v)
+         [v ch])
 
-              ;; Wait for the first put operation on c3 and c4
-              [[c3 "hi"] [c4 "there"]]
-              ([_ ch] (println (current-thread-name) "Put to channel" ch)))]))
-
-    (put-with-random-sleep c1 "hello" 5)
-    (put-with-random-sleep c2 "world" 5)
-    (go (println (current-thread-name) "Got" (<! (take-with-random-sleep c3 5))))
-    (go (println (current-thread-name) "Got" (<! (take-with-random-sleep c4 5))))
-    "done"))
+        ;; Wait for the first put operation on c3 and c4
+        [[c3 "hi"] [c4 "there"]]
+        ([_ ch] [:put-done ch])))))
 
 (defn -main
   "i don't do a whole lot ... yet."
