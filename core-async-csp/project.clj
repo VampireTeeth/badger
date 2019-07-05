@@ -5,6 +5,6 @@
             :url "https://www.eclipse.org/legal/epl-2.0/"}
   :dependencies [[org.clojure/clojure "1.10.0"]
                  [org.clojure/core.async "0.4.500"]]
-  :main ^:skip-aot core-async-csp.core
+  :main ^:skip-aot core-async-csp.demo1
   :target-path "target/%s"
   :profiles {:uberjar {:aot :all}})

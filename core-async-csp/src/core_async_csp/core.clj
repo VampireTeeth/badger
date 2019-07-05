@@ -1,7 +1,7 @@
 (ns core-async-csp.core
   (:gen-class)
   (:require [clojure.core.async :as async
-             :refer [>!! >! <!! <! alts!! alts!! chan close! go]]))
+             :refer [>!! >! <!! <! alts!! alts!! alt! alt!! chan close! go thread]]))
 
 (defn- current-thread-name
   []
