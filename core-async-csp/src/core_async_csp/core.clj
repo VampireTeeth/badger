@@ -83,17 +83,20 @@
     (go (<! (timeout 4000)) (println (current-thread-name) "Got" (<! c3)))
     (go (<! (timeout 4500)) (println (current-thread-name) "Got" (<! c4)))
 
-    (thread
-      (alt!!
-        ;; Wait for the first take operation on c1 and c2
-        [c1 c2]
-        ([v ch]
-         (println (current-thread-name) "Got" v)
-         [v ch])
+    (<!!
+     (thread
+       (alt!!
+         ;; Wait for the first take operation on c1 and c2
+         [c1 c2]
+         ([v ch]
+          (println (current-thread-name) "Got" v)
+          [v ch])
 
-        ;; Wait for the first put operation on c3 and c4
-        [[c3 "hi"] [c4 "there"]]
-        ([_ ch] [:put-done ch])))))
+         ;; Wait for the first put operation on c3 and c4
+         [[c3 "hi"] [c4 "there"]]
+         ([_ ch] [:put-done ch]))))
+    (doseq [c [c1 c2 c3 c4]]
+      (close! c))))
 
 (defn -main
   "i don't do a whole lot ... yet."
