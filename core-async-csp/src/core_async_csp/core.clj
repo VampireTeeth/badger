@@ -98,6 +98,33 @@
     (doseq [c [c1 c2 c3 c4]]
       (close! c))))
 
+(defn channel-timeout
+  []
+  (let [c (chan)
+        t (timeout 3000)]
+    (go
+      (<! (timeout 4000))
+      (>! c "hello"))
+    (let [[v ch] (alts!! [c t])]
+      (println "Got" v))
+    (close! c)))
+
+(defn channel-timeout-with-keyword
+  []
+  (let [c (chan)
+        t (timeout 5000)]
+    (try
+      (go
+        (<! (timeout 6000))
+        (>! c "hello"))
+      (let [v
+            (alt!!
+              t :timeout
+              c ([v _] v))]
+        (println "Got" v))
+      (finally
+        (close! c)))))
+
 (defn -main
   "i don't do a whole lot ... yet."
   [& args]
